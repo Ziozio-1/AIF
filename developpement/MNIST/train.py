@@ -1,6 +1,7 @@
 import argparse
 from statistics import mean
 
+from torch.utils.tensorboard import SummaryWriter
 import torch
 import torchvision
 import torchvision.transforms as transforms
@@ -11,7 +12,7 @@ from tqdm import tqdm
 
 from model import MNISTNet
 
-def train(net, optimizer, loader, epochs=10):
+def train(net, optimizer, loader, writer, epochs=10):
     criterion = nn.CrossEntropyLoss()
     for epoch in range(epochs):
         running_loss = []
@@ -25,6 +26,7 @@ def train(net, optimizer, loader, epochs=10):
             loss.backward()
             optimizer.step()
             t.set_description(f'training loss: {mean(running_loss)}')
+        writer.add_scalar('training loss', mean(running_loss), epoch)
 
 def test(model, dataloader):
     test_corrects = 0
@@ -48,6 +50,7 @@ if __name__=='__main__':
     parser.add_argument('--Num_Epochs', type=int, default=10, help='Number of Epoch. Default to 10.')
 
     args = parser.parse_args()
+    writer = SummaryWriter(f'runs/MNIST')
     exp_name= args.exp_name
     epochs = args.Num_Epochs
     batch_size = args.Batch_Size
