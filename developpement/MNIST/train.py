@@ -75,7 +75,23 @@ testloader = torch.utils.data.DataLoader(testset, batch_size=batch_size, shuffle
 net = MNISTNet().to(device)
 optimizer = optim.SGD(net.parameters(),lr=lr)
 
-train(net, optimizer, trainloader, epochs=epochs)
+#add embeddings to tensorboard
+perm = torch.randperm(len(trainset.data))
+images, labels = trainset.data[perm][:256], trainset.targets[perm][:256]
+images = images.unsqueeze(1).float().to(device)
+with torch.no_grad():
+    embeddings = net.get_features(images)
+    writer.add_embedding(embeddings,
+                metadata=labels,
+                label_img=images, global_step=1)
+
+# save networks computational graph in tensorboard
+writer.add_graph(net, images)
+# save a dataset sample in tensorboard
+img_grid = torchvision.utils.make_grid(images[:64])
+writer.add_image('mnist_images', img_grid)
+
+train(net, optimizer, trainloader, writer, epochs=epochs)
 test_acc = test(net,testloader)
 print(f'Test accuracy:{test_acc}')
 
